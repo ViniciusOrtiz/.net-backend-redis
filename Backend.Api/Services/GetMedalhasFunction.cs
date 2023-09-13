@@ -29,15 +29,27 @@ namespace Backend.Api.Services
         [Function("GetMedalhasFunction")]
         public async Task<IEnumerable<MedalhaEntity>> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "medalhas")] HttpRequestData req)
         {
-            var listaMedalhas = new List<MedalhaEntity>();
-            foreach (var key in _cachingService.Scan("medalhas"))
+            try
             {
-                Console.WriteLine(key);
-                var medalha = JsonSerializer.Deserialize<MedalhaEntity>(_cachingService.Read(key));
-                listaMedalhas.Add(medalha);
-            }
+                _cachingService.Connect();
 
-            return listaMedalhas;
+                var listaMedalhas = new List<MedalhaEntity>();
+
+                foreach (var key in _cachingService.Scan("medalhas"))
+                {
+                    Console.WriteLine(key);
+                    var medalha = JsonSerializer.Deserialize<MedalhaEntity>(_cachingService.Read(key));
+                    listaMedalhas.Add(medalha);
+                }
+
+                return listaMedalhas;
+            }
+            catch
+            {
+                var medalhas = await _medalhaRepository.GetAsync();
+                return medalhas;
+            }
+            
         }
     }
 }

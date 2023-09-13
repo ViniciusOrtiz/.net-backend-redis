@@ -46,17 +46,28 @@ namespace Backend.Api.Services
 
             await _medalhaRepository.UpdateAsync(medalha);
 
-            var cacheKey = $"medalhas.{medalha.Pais}";
-            var cache = _cachingService.Read(cacheKey);
-            var medalhaSerializada = JsonSerializer.Serialize(medalha);
-
-            if (cache is null)
+            try
             {
-                _cachingService.Create(cacheKey, medalhaSerializada);
-                return;
-            }
+                _cachingService.Connect();
 
-            _cachingService.Update(cacheKey, medalhaSerializada);
+                var cacheKey = $"medalhas.{medalha.Pais}";
+                var medalhaSerializada = JsonSerializer.Serialize(medalha);
+
+                var cache = _cachingService.Read(cacheKey);
+                if (cache is null)
+                {
+                    _cachingService.Create(cacheKey, medalhaSerializada);
+                    return;
+                }
+
+                _cachingService.Update(cacheKey, medalhaSerializada);
+            }
+            catch (Exception)
+            {
+                _cachingService.Disconnect();
+                throw;
+            }
+            
         }
     }
 }

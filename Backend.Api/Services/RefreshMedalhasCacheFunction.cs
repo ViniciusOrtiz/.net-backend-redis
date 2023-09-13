@@ -27,19 +27,30 @@ namespace Backend.Api.Services
         [Function("RefreshMedalhasCacheFunction")]
         public async Task Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
         {
-            var medalhas = await _medalhaRepository.GetAsync();
-
-            foreach (var medalha in medalhas)
+            try
             {
-                var cacheKey = $"medalhas.{medalha.Pais}";
-                var cache = _cachingService.Read(cacheKey);
-                if (cache is not null)
-                {
-                    _cachingService.Delete(cacheKey);
-                }
+                _cachingService.Connect();
 
-                _cachingService.Create(cacheKey, JsonSerializer.Serialize(medalha));
+                var medalhas = await _medalhaRepository.GetAsync();
+
+                foreach (var medalha in medalhas)
+                {
+                    var cacheKey = $"medalhas.{medalha.Pais}";
+                    var cache = _cachingService.Read(cacheKey);
+                    if (cache is not null)
+                    {
+                        _cachingService.Delete(cacheKey);
+                    }
+
+                    _cachingService.Create(cacheKey, JsonSerializer.Serialize(medalha));
+                }
             }
+            catch (Exception)
+            {
+                _cachingService.Disconnect();
+                throw;
+            }
+            
         }
     }
 }

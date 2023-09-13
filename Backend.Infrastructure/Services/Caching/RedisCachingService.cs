@@ -5,13 +5,27 @@ namespace Backend.Infrastructure.Services.Caching
 {
     public class RedisCachingService : ICachingService
     {
-        private readonly ConnectionMultiplexer _redisConnection;
-        private readonly IDatabase _cache;
+        private ConnectionMultiplexer _redisConnection;
+        private IDatabase _cache;
+        private readonly string _connectionString;
 
         public RedisCachingService(string connectionString)
         {
-            _redisConnection = ConnectionMultiplexer.Connect(connectionString);
+            _connectionString = connectionString;
+        }
+
+        public void Connect()
+        {
+            _redisConnection = ConnectionMultiplexer.Connect(_connectionString);
             _cache = _redisConnection.GetDatabase();
+        }
+
+        public void Disconnect()
+        {
+            if(_redisConnection is not null)
+            {
+                _redisConnection.Close();
+            }
         }
 
         public void Create(string key, string value, TimeSpan? expiry = null)
@@ -47,5 +61,6 @@ namespace Backend.Infrastructure.Services.Caching
                 _cache.StringSet(key, value, expiry);
             }
         }
+
     }
 }
